@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PASSEE</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+  <h1 class="text-3xl font-bold text-center mb-4">PASSEE</h1>
+
+  <div class="flex justify-center mb-16 mt-16">
+    <div class="w-1/5">
+      <canvas id="passeePie" width="250" height="250"></canvas>
+    </div>
+  </div>
+
+  <div id="sliders" class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 mt-16">
+    <!-- Sliders will be injected here -->
+  </div>
+
+  <script>
+    const DIMENSIONS = [
+      { key: "privacy", label: "Privacy", description: "How much individual privacy is protected." },
+      { key: "analytics", label: "Analytics", description: "Extent of data analytics/monitoring used." },
+      { key: "security", label: "Security", description: "Digital and infrastructural security." },
+      { key: "society", label: "Society", description: "Social well-being, equity, inclusion." },
+      { key: "economy", label: "Economy", description: "Economic health, fairness, growth." },
+      { key: "environment", label: "Environment", description: "Environmental sustainability & impact." }
+    ];
+
+    const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#22c55e", "#eab308", "#0ea5e9", "#94a3b8"];
+    const MAX_DEG = 60;
+
+    let values = Object.fromEntries(DIMENSIONS.map(d => [d.key, 0]));
+
+    function computePieData() {
+      const slices = DIMENSIONS.map(d => (values[d.key] / 3) * MAX_DEG);
+      const filled = slices.reduce((a,b)=>a+b,0);
+      const gap = Math.max(0,360-filled);
+      return [...slices,gap];
+    }
+
+    const ctx = document.getElementById('passeePie');
+    let pieChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: [...DIMENSIONS.map(d=>d.label),"Gap"],
+        datasets:[{data:computePieData(),backgroundColor:COLORS,borderColor:"#ffffff",borderWidth:2}]
+      },
+      options:{
+        cutout:'70%',
+        plugins:{
+          tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw.toFixed(0)}°`}}
+        }
+      }
+    });
+
+    function updateChart(){pieChart.data.datasets[0].data=computePieData();pieChart.update();}
+
+    function createSliders(){
+      const container=document.getElementById("sliders");container.innerHTML="";
+      const groups=[{title:"Digital Dimensions",dims:DIMENSIONS.slice(0,3)},{title:"Sustainability Dimensions",dims:DIMENSIONS.slice(3)}];
+      groups.forEach((group,gi)=>{
+        const col=document.createElement("div");col.className="space-y-4";
+        const header=document.createElement("h2");header.className="text-lg font-semibold text-center";header.innerText=group.title;col.appendChild(header);
+        group.dims.forEach((dim,idx)=>{
+          const card=document.createElement("div");card.className="bg-white rounded-xl shadow p-2";
+          const top=document.createElement("div");top.className="flex items-center justify-between mb-1";
+          const left=document.createElement("div");left.className="flex items-center";
+          const dot=document.createElement("span");dot.className="w-3 h-3 rounded-full mr-2";dot.style.backgroundColor=COLORS[idx+(gi*3)];
+          const lbl=document.createElement("span");lbl.className="text-base font-medium";lbl.innerText=dim.label;
+          left.appendChild(dot);left.appendChild(lbl);top.appendChild(left);
+          const info=document.createElement("button");info.className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm";info.innerText="i";info.onclick=()=>{alert(dim.description);};top.appendChild(info);card.appendChild(top);
+          const slider=document.createElement("input");slider.type="range";slider.min=0;slider.max=3;slider.step=1;slider.value=values[dim.key];slider.className="w-full h-2 bg-gray-200 rounded-lg accent-indigo-500 cursor-pointer";slider.oninput=e=>{values[dim.key]=parseInt(e.target.value);updateChart();};card.appendChild(slider);
+          const ticks=document.createElement("div");ticks.className="flex justify-between px-2 mt-1 text-xs text-gray-500";["0","1","2","3"].forEach(t=>{const s=document.createElement("span");s.innerText=t;ticks.appendChild(s);});card.appendChild(ticks);
+          col.appendChild(card);
+        });
+        container.appendChild(col);
+      });
+    }
+
+    createSliders();
+  </script>
+</body>
+</html>
